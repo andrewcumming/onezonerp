@@ -128,11 +128,13 @@ plt.savefig('TP.pdf')
 fig = plt.figure( )
 ax = fig.add_subplot(1,1,1)
 for i in range(len(species)):
-	if max(AA[i]*result[:,i]) > 1e-10:
-		plt.plot(t,AA[i]*result[:,i],label=species[i])
+	if max(AA[i]*result[:,i]) > 1e-12:
+		plt.plot(t,AA[i]*result[:,i])#label=species[i])
 
+plt.xlabel(r'$\mathrm{Column\ depth}\ (g\ cm^{-2})$')
+plt.ylabel(r'$\mathrm{Mass\ fraction}\ X_i$')
 ax.set_xscale('log')
 ax.set_yscale('log')
-plt.ylim((1e-6,1.0))
-plt.legend()
+plt.ylim((1e-5,1.0))
+#plt.legend()
 plt.savefig('abun.pdf')
