@@ -129,7 +129,7 @@ fig = plt.figure( )
 ax = fig.add_subplot(1,1,1)
 for i in range(len(species)):
 	if max(AA[i]*result[:,i]) > 1e-12:
-		plt.plot(t,AA[i]*result[:,i])#label=species[i])
+		plt.plot(mdot*t,AA[i]*result[:,i])#label=species[i])
 
 plt.xlabel(r'$\mathrm{Column\ depth}\ (g\ cm^{-2})$')
 plt.ylabel(r'$\mathrm{Mass\ fraction}\ X_i$')
