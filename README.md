@@ -13,3 +13,4 @@ Not included:
 * density-dependent weak rates
 * conduction in the opacity
 * free-free Gaunt factor has been set to 1
+
