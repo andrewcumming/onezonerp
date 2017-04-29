@@ -1,0 +1,7 @@
+*.dat
+*.pdf
+*.c
+*.html
+*.so
+build/*
+__pycache__/*

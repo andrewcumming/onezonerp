@@ -1,0 +1,13 @@
+A one-zone model of rp-process burning on accreting neutron stars. The code uses the [REACLIB](https://groups.nscl.msu.edu/jina/reaclib/db/) reaction database. To compile the net module with cython (`pip install cython`), use
+
+`python setup.py build_ext --inplace`
+
+The code `steady.py` calculates the profile of a steady burning envelope (as in [Schatz et al. 1999](http://adsabs.harvard.edu/abs/1999ApJ...524.1014S).
+
+Not included:
+
+* neutrino losses
+* screening
+* density-dependent weak rates
+* conduction in the opacity
+* free-free Gaunt factor has been set to 1
