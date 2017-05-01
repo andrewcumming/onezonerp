@@ -3,6 +3,7 @@ cimport cython
 cdef extern from "math.h":
 	double exp(double m)
 	double log(double m)
+	double sqrt(double m)
  
 import numpy as np
 import itertools
@@ -34,15 +35,6 @@ def get_AZ(species):
 		AA = np.append(AA, int(f[1]))
 		ZZ = np.append(ZZ, elements[f[0]])
 	return AA,ZZ
-
-@cython.boundscheck(False)
-@cython.cdivision(True)
-def calculate_rate(double T9,double a0,double a1,double a2,double a3,double a4,double a5,double a6):
-	cdef double T913, T953, rate
-	T913 = T9**(1.0/3.0)
-	T953 = T9**(5.0/3.0)
-	rate = exp(a0 + a1/T9 + a2/T913 + a3*T913 + a4*T9 + a5*T953 + a6*log(T9))
-	return rate
 
 def read_rates(species):
 	# Reads the Reaclib library to get rates involving the species in 
@@ -89,22 +81,34 @@ def read_rates(species):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def calculate_dYdt(double rho,double T,species,double [:] Y,rates):
-	cdef int n_reac, n_prod, count, i
-	cdef double ydot, eps, rateval
+@cython.cdivision(True)
+def calculate_dYdt(double rho,double T,double Ye,species,double [:] Y,double [:] AA,double [:] ZZ,rates):
+	cdef int n_reac, n_prod, count, i, i0, i1, i2
+	cdef double ydot, eps, rateval, Q_val
+	cdef double a0, a1, a2, a3, a4, a5, a6
 	cdef double[:] dYdt=np.zeros(len(species))
 	eps = 0.0
 	for rate in rates:   
 		n_reac = rate[0]
 		n_prod = rate[1]
-		rateval = calculate_rate(T*1e-9,*rate[4])
+		Q_val = rate[5]
+		a0, a1, a2, a3, a4, a5, a6 = rate[4]
+		rateval = calculate_rate(T*1e-9, a0, a1, a2, a3, a4, a5, a6)
+
 		ind = rate[3]   # the indices of the species involved in this reaction
-		
-		ydot = rateval*Y[ind[0]]
+		i0 = ind[0]
 		if n_reac>1:
-			ydot *= rho*Y[ind[1]]    # note: currently no check for identical particles
+			i1 = ind[1]
 			if n_reac>2:
-				ydot *= rho*Y[ind[2]] / 6.0    # assume this is triple alpha
+				i2 = ind[2]
+		
+		ydot = rateval*Y[i0]
+		if n_reac>1:
+			ydot *= rho*Y[i1]*exp(screening(T, rho, Ye, ZZ[i0], ZZ[i1], AA[i0], AA[i1]))
+						# note: currently no check for identical particles
+			if n_reac>2:
+				#ydot *= rho*Y[ind[2]] / 6.0    # assume this is triple alpha
+				ydot = eps_triple_alpha(rho, T, Ye) * Y[i0]**3 / Q_val
 
 		count = 0
 		for i in ind:
@@ -114,5 +118,79 @@ def calculate_dYdt(double rho,double T,species,double [:] Y,rates):
 				dYdt[i] = dYdt[i] + ydot
 			count+=1
 			
-		eps += rate[5]*ydot    # rate[4] is the Qvalue in MeV/mu
+		eps += Q_val*ydot    # rate[4] is the Qvalue in MeV/mu
 	return dYdt, eps
+
+@cython.cdivision(True)
+cdef double calculate_rate(double T9,double a0,double a1,double a2,double a3,double a4,double a5,double a6):
+	# numerically evaluates the rate
+	cdef double T913, T953, rate
+	T913 = T9**(1.0/3.0)
+	T953 = T9**(5.0/3.0)
+	rate = exp(a0 + a1/T9 + a2/T913 + a3*T913 + a4*T9 + a5*T953 + a6*log(T9))
+	return rate
+
+@cython.cdivision(True)
+cdef double screening(double T, double rho, double Ye, double Z1, double Z2, double A1, double A2):
+	# screening factor from Ogata et al 1993
+	# eqs. (19)--(21)
+	cdef double T8, gam, r6, r613, f, lgam, hf, A, tau, Z13,Z23, QQ, DD,BB
+	
+	A = A1*A2/(A1+A2)
+	T8 = 1e-8*T
+	r6 = Ye*rho/1e6
+	r613 = r6**(1.0/3.0)
+	Z13 = Z1**(1.0/3.0)
+	Z23 = Z2**(1.0/3.0)
+	
+	hf = 0.25*(Z13+Z23)**3/(Z1+Z2)
+	gam = 0.23 * r613/T8 * 2.0*Z1*Z2/(Z13+Z23)
+	lgam=log(gam)
+	
+	tau = 9.18*(Z1*Z2)**(2.0/3.0)*(A/T8)**(1.0/3.0)
+	f = 3.0*gam/tau
+	
+	QQ = (1.148-0.00944*lgam-0.000168*lgam*lgam)*gam-0.15625*gam*f*f*hf+(-0.18528+0.03863*lgam+0.01095*f)*gam*f*f*f
+	
+	return QQ
+
+@cython.cdivision(True)
+cdef double eps_triple_alpha(double rho, double T, double Ye):
+	# Fushiki and Lamb's fit to the triple alpha rate
+	# includes screening and is good for pycnonuclear regime
+	cdef double r6, T6, r613, r616, T613, T623, T653, T632, T612, u, G1, G2, f1, f2, f3, f4, u32
+	r6 = 1e-6*rho*Ye*2.0
+	T6 = 1e-6*T
+	
+	r613 = r6**(1.0/3.0)
+	r616 = sqrt(r613)
+	T613 = T6**(1.0/3.0)
+	T623 = T613*T613
+	T653 = T6*T623
+	T632 = T6**1.5
+	T612 = sqrt(T6)
+	
+	u = 1.35*r613/T623
+	u32 = u**1.5
+	
+	f1 = exp(60.492*r613/T6)
+	f2 = exp(106.35*r613/T6)
+	if r6 < 5.458e3:
+		f3 = exp(-1065.1/T6)/T632
+	else:
+		f3 = 0.0
+	if r6 < 1.836e4:
+		f4 = exp(-3336.4/T6)/T632
+	else:
+		f4 = 0.0
+  		
+	if (u < 1):
+		G1 = f1*(f3+16.16*exp(-134.92/T613)/(T623*((1-4.222e-2*T623)**2+2.643e-5*T653)))
+		G2=f2*(f4+244.6*(1+3.528e-3*T623)**5*exp(-235.72/T613)/(T623*((1-2.807e-2*T623)**2+2.704e-6*T653)))
+	else:
+		G1=f1*f3+1.178*(1+(1.0/u32))*exp(-77.554/r616)/(T612*((1-5.680e-2*r613)**2+8.815e-7*T6*T6))
+		G2=f2*f4+13.48*(1+(1.0/u32))*(1+5.070e-3*r613)**5*exp(-135.08/r616)/(T612*((1-3.791e-2*r613)**2+5.162e-8*T6*T6))
+  		
+	r6=r6/(2.0*Ye)
+	# multiply the following by Y_He^3 to get eps
+	return 5.12e29*64*r6*r6*G1*G2

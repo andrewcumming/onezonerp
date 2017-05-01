@@ -30,7 +30,7 @@ def derivs(Y,t):
 	rho = eos.find_rho(P,T,Ye,Yi)
 
 	# abundance derivatives
-	dYdt, eps = net.calculate_dYdt(rho,T,species,Y[:-2],rates)
+	dYdt, eps = net.calculate_dYdt(rho,T,Ye,species,Y[:-2],AA,ZZ,rates)
 
 	# temperature gradient  (eq. 6 of Schatz et al. 1999)
 	dTdt = mdot * 3.0*eos.kappa(rho,T,Ye)*F / (4.0*arad*clight*T**3)
@@ -49,7 +49,7 @@ mdot_Edd = 8.8e4
 arad = 7.5657e-15
 clight = 3e10
 
-mdot = 2.0
+mdot = 1.0
 Ftop = 6.5
 print('Accretion rate ',mdot, ' Eddington; flux at the top = ',Ftop, ' MeV/mu')
 mdot = mdot*mdot_Edd
@@ -64,7 +64,7 @@ mdot = mdot*mdot_Edd
 #species = net.make_species_list('h1 he4 o14-18 c12-13 n13-15 f17-19 ne18-21 na20-23 mg21-25 al22-27 si24-30 p26-31 s27-34 cl30-35 ar31-38 k35-39 ca36-44 sc39-45 ti40-47 v43-49 cr44-52 mn47-53 fe48-56 co51-56 ni52-57 cu54-63 zn55-66 ga59-67 ge60-68 as64-69 se65-72 br68-73 kr69-74 rb73-77 sr74-78')
 # biggest (~300 isotopes)
 species = net.make_species_list('h1 he4 o14-18 c12-13 n13-15 f17-19 ne18-21 na20-23 mg21-25 al22-27 si24-30 p26-31 s27-34 cl30-35 ar31-38 k35-39 ca36-44 sc39-45 ti40-47 v43-49 cr44-52 mn47-53 fe48-56 co51-56 ni52-57 cu54-63 zn55-66 ga59-67 ge60-68 as64-69 se65-72 br68-73 kr69-74 rb73-77 sr74-78 y77-82 zr78-83 nb81-85 mo82-86 tc85-88 ru86-91 rh89-93 pd90-94 ag94-98 cd95-99 in98-104 sn99-105 sb106')
-
+AA, ZZ = net.get_AZ(species)
 print("Number of species=",len(species))
 rates = net.read_rates(species)
 print("Number of rates = ",len(rates))
@@ -73,7 +73,6 @@ print("Number of rates = ",len(rates))
 XX = np.append(np.array([0.7,0.28,0.01,0.01]),np.zeros(len(species)-4))
 
 # convert to number fraction for the network evolution
-AA, ZZ = net.get_AZ(species)
 YY = np.array([X/A for X,A in zip(XX,AA)])
 
 # ----- integrate ----- 
