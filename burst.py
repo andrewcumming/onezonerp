@@ -40,7 +40,7 @@ def derivs(Y,t):
 	return dYdt
 
 # parameters
-grav = 2e14
+grav = 2.45e14
 mdot_Edd = 8.8e4
 arad = 7.5657e-15
 clight = 3e10
@@ -133,10 +133,10 @@ for i in range(len(species)):
 	elif i<30:
 		plt.plot(tt[1:],XX[1:],'--',label=species[sortind[i]])
 
-plt.legend(ncol=1,prop={'size':6})
+plt.legend(ncol=1,prop={'size':6},loc=5)
 plt.xlabel(r'$\mathrm{Time (s)}$')
 plt.ylabel(r'$\mathrm{Mass\ fraction}\ X_i$')
-ax.set_xscale('log')
+ax.set_xscale('linear')
 ax.set_yscale('log')
 plt.ylim((1e-5,1.0))
 plt.savefig('burst_abun.pdf')
