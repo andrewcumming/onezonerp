@@ -47,16 +47,16 @@ clight = 3e10
 kB = 1.38e-16
 mp = 1.67e-24
 
-X0 = 0.7
+X0 = 0.0
 
 # ----- set up network -----
-species = net.make_species_list('h1 he4 o14-18 c12-13 n13-15 f17-19 ne18-21 na20-23 mg21-25 al22-27 si24-30 p26-31 s27-34 cl30-35 ar31-38 k35-39 ca36-44 sc39-45 ti40-47 v43-49 cr44-52 mn47-53 fe48-56 co51-56 ni52-57 cu54-63 zn55-66 ga59-67 ge60-68 as64-69 se65-72 br68-73 kr69-74 rb73-77 sr74-78')
+species = net.make_species_list('h1 he4 c12-13 o14-18 n13-15 f17-19 ne18-21 na20-23 mg21-25 al22-27 si24-30 p26-31 s27-34 cl30-35 ar31-38 k35-39 ca36-44 sc39-45 ti40-47 v43-49 cr44-52 mn47-53 fe48-56 co51-56 ni52-57 cu54-63 zn55-66 ga59-67 ge60-68 as64-69 se65-72 br68-73 kr69-74 rb73-77 sr74-78')
 print("Number of species=",len(species))
 rates = net.read_rates(species)
 print("Number of rates = ",len(rates))
 
 # initial mass fractions
-XX = np.append(np.array([X0,0.98-X0,0.01,0.01]),np.zeros(len(species)-4))
+XX = np.append(np.array([X0,1.0-X0,0.00]),np.zeros(len(species)-3))
 
 # convert to number fraction for the network evolution
 AA, ZZ = net.get_AZ(species)
@@ -64,8 +64,8 @@ YY = np.array([X/A for X,A in zip(XX,AA)])
 
 # ----- integrate ----- 
 T0 = 2e8
-ycolumn = 2e8
-time_to_run =  1e3
+ycolumn = 3e8
+time_to_run =  1e2
 nsteps = 1e5
 t = np.arange(nsteps+1)*time_to_run/nsteps
 t0 = time.time()
@@ -101,11 +101,12 @@ for i, T in enumerate(result[:,-1]):
 	Ye_vec = np.append(Ye_vec,Ye)
 	Yi_vec = np.append(Yi_vec,Yi)
 	rho_vec = np.append(rho_vec,rho)
-	T_vec = np.append(T_vec,rho)
+	T_vec = np.append(T_vec,T)
 	
-ind = F>0.01*max(F)
+ind = F>0.001*max(F)
 tburst = t[ind]
 tstart = tburst[0]
+print("Burst start time = ",tstart)
 Fburst = F[ind]
 plt.plot(tburst-tstart,Fburst)
 ax.set_yscale('linear')
@@ -127,10 +128,11 @@ for i in range(len(species)):
 	XX = X[ind]
 	if i<10:
 		plt.plot(tt[1:],XX[1:],label=species[sortind[i]])
-	elif i<30:
-		plt.plot(tt[1:],XX[1:])
+	elif i<20:
+		plt.plot(tt[1:],XX[1:],':',label=species[sortind[i]])
+		pass
 
-plt.legend(ncol=1,prop={'size':6})
+plt.legend(ncol=2,prop={'size':6})
 plt.xlabel(r'$\mathrm{Time (s)}$')
 plt.ylabel(r'$\mathrm{Mass\ fraction}\ X_i$')
 ax.set_xscale('log')
