@@ -1,4 +1,5 @@
 cimport cython
+cimport numpy as np
 
 cdef extern from "math.h":
 	double exp(double m)
@@ -42,6 +43,9 @@ def read_rates(species):
 	rates = []
 	# open REACLIB file
 	fp = open('20170427default','r')	
+	# number of reactants and products for each REACLIB chapter
+	n_reac_vec = (1,1,1,2,2,2,2,3)	
+	n_prod_vec = (1,2,3,1,2,3,4,1)
 	count = 0
 	include_rate = False
 	chapter = 0
@@ -70,10 +74,8 @@ def read_rates(species):
 				a0,a1,a2,a3 = [float(line[13*i:13*(i+1)]) for i in range(4)]
 			if count==2:
 				a4,a5,a6 = [float(line[13*i:13*(i+1)]) for i in range(3)]
-				ind = [species.index(spec) for spec in nuclides]
-				n_reac_vec = (1,1,1,2,2,2,2,3)	
-				n_prod_vec = (1,2,3,1,2,3,4,1)
-				rates.append((n_reac_vec[chapter-1],n_prod_vec[chapter-1],nuclides,ind,(a0,a1,a2,a3,a4,a5,a6),Q))
+				ind = tuple(species.index(spec) for spec in nuclides)
+				rates.append((n_reac_vec[chapter-1],n_prod_vec[chapter-1],ind,a0,a1,a2,a3,a4,a5,a6,Q))
 				include_rate=False
 		count = (count+1) % 3
 	fp.close()
@@ -83,27 +85,21 @@ def read_rates(species):
 @cython.wraparound(False)
 @cython.cdivision(True)
 def calculate_dYdt(double rho,double T,double Ye,species,double [:] Y,double [:] AA,double [:] ZZ,rates):
-	cdef int n_reac, n_prod, count, i, i0, i1, i2
+	cdef int n_reac, n_prod, count, i, i0, i1
 	cdef double ydot, eps, rateval, Q_val
 	cdef double a0, a1, a2, a3, a4, a5, a6
-	cdef double[:] dYdt=np.zeros(len(species))
+	cdef double[:] dYdt=np.zeros(len(Y))
+	cdef tuple ind
 	eps = 0.0
 	for rate in rates:   
-		n_reac = rate[0]
-		n_prod = rate[1]
-		Q_val = rate[5]
-		a0, a1, a2, a3, a4, a5, a6 = rate[4]
+		n_reac, n_prod, ind, a0, a1, a2, a3, a4, a5, a6, Q_val = rate
+
 		rateval = calculate_rate(T*1e-9, a0, a1, a2, a3, a4, a5, a6)
 
-		ind = rate[3]   # the indices of the species involved in this reaction
 		i0 = ind[0]
-		if n_reac>1:
-			i1 = ind[1]
-			if n_reac>2:
-				i2 = ind[2]
-		
 		ydot = rateval*Y[i0]
 		if n_reac>1:
+			i1 = ind[1]
 			ydot *= rho*Y[i1]*exp(screening(T, rho, Ye, ZZ[i0], ZZ[i1], AA[i0], AA[i1]))
 						# note: currently no check for identical particles
 			if n_reac>2:
@@ -112,10 +108,7 @@ def calculate_dYdt(double rho,double T,double Ye,species,double [:] Y,double [:]
 
 		count = 0
 		for i in ind:
-			if count<n_reac:
-				dYdt[i] = dYdt[i] - ydot
-			else:
-				dYdt[i] = dYdt[i] + ydot
+			dYdt[i] += -ydot if count<n_reac else ydot
 			count+=1
 			
 		eps += Q_val*ydot    # rate[4] is the Qvalue in MeV/mu
