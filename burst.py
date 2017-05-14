@@ -106,6 +106,7 @@ for i, T in enumerate(result[:,-1]):
 ind = F>0.001*max(F)
 tburst = t[ind]
 tstart = tburst[0]
+tend = tburst[-1]
 print("Burst start time = ",tstart)
 Fburst = F[ind]
 plt.plot(tburst-tstart,Fburst)
@@ -114,6 +115,22 @@ ax.set_xscale('linear')
 plt.savefig('burst_prof.pdf')
 #plt.show()
 np.savetxt('burst_prof.dat', np.c_[tburst,Fburst,rho_vec[ind],T_vec[ind],Ye_vec[ind],Yi_vec[ind]])
+
+# plot final abundances vs. A
+fig = plt.figure()
+ax = fig.add_subplot(1,1,1)
+Avec = np.arange(int(max(AA))+1)
+Yvec = np.zeros(len(Avec))
+for i in range(len(species)):
+	if result[t==tend,i]>1e-12:
+		Yvec[int(AA[i])] = Yvec[int(AA[i])] + AA[i]*result[t==tend,i]
+Yvec[Yvec==0.0] = 1e-12
+plt.plot(Avec,np.log10(Yvec),'ko')
+plt.plot(Avec,np.log10(Yvec),'k')
+plt.ylim((-5,0))
+plt.xlim((0,100))
+ax.set_yscale('linear')
+plt.savefig('burst_finalabun.pdf')
 
 # plot abundances over time
 print("Plotting abundances")

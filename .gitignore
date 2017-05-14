@@ -3,5 +3,7 @@
 *.c
 *.html
 *.so
+*.mp4
+png/*
 build/*
 __pycache__/*
