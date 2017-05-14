@@ -1,5 +1,4 @@
 cimport cython
-cimport numpy as np
 
 cdef extern from "math.h":
 	double exp(double m)
@@ -84,7 +83,7 @@ def read_rates(species):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-def calculate_dYdt(double rho,double T,double Ye,species,double [:] Y,double [:] AA,double [:] ZZ,rates):
+def calculate_dYdt(double rho,double T,double Ye,double [:] Y,double [:] AA,double [:] ZZ,rates):
 	cdef int n_reac, n_prod, count, i, i0, i1
 	cdef double ydot, eps, rateval, Q_val
 	cdef double a0, a1, a2, a3, a4, a5, a6

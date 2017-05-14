@@ -28,7 +28,7 @@ def derivs(Y,t):
 	rho = eos.find_rho(P,T,Ye,Yi)
 
 	# abundance derivatives
-	dYdt, eps = net.calculate_dYdt(rho,T,Ye,species,Y[:-1],AA,ZZ,rates)
+	dYdt, eps = net.calculate_dYdt(rho,T,Ye,Y[:-1],AA,ZZ,rates)
 
 	# temperature
 	F = arad*clight*T**4 / (3*eos.kappa(rho,T,Ye)*ycolumn)

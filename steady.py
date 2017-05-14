@@ -30,7 +30,7 @@ def derivs(Y,t):
 	rho = eos.find_rho(P,T,Ye,Yi)
 
 	# abundance derivatives
-	dYdt, eps = net.calculate_dYdt(rho,T,Ye,species,Y[:-2],AA,ZZ,rates)
+	dYdt, eps = net.calculate_dYdt(rho,T,Ye,Y[:-2],AA,ZZ,rates)
 
 	# temperature gradient  (eq. 6 of Schatz et al. 1999)
 	dTdt = mdot * 3.0*eos.kappa(rho,T,Ye)*F / (4.0*arad*clight*T**3)
