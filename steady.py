@@ -25,6 +25,7 @@ def derivs(Y,t):
 	T = Y[-2]
 	F = Y[-1]
 	P = grav * mdot * t
+	YZ2 = sum(Y[:-2]*ZZ*ZZ)
 	Ye = sum(Y[:-2]*ZZ)
 	Yi = sum(Y[:-2])
 	rho = eos.find_rho(P,T,Ye,Yi)
@@ -33,7 +34,7 @@ def derivs(Y,t):
 	dYdt, eps = net.calculate_dYdt(rho,T,Ye,Y[:-2],AA,ZZ,rates)
 
 	# temperature gradient  (eq. 6 of Schatz et al. 1999)
-	dTdt = mdot * 3.0*eos.kappa(rho,T,Ye)*F / (4.0*arad*clight*T**3)
+	dTdt = mdot * 3.0*eos.kappa(rho,T,Ye,YZ2)*F / (4.0*arad*clight*T**3)
 
 	# dF/dt, ignoring compressional heating (eq. 5 of Schatz et al 1999)
 	dFdt = -mdot * eps

@@ -22,6 +22,7 @@ import time
 
 def derivs(Y,t):
 	T = Y[-1]
+	YZ2 = sum(Y[:-1]*ZZ*ZZ)
 	Ye = sum(Y[:-1]*ZZ)
 	Yi = sum(Y[:-1])
 	P = grav*ycolumn
@@ -31,7 +32,7 @@ def derivs(Y,t):
 	dYdt, eps = net.calculate_dYdt(rho,T,Ye,Y[:-1],AA,ZZ,rates)
 
 	# temperature
-	F = arad*clight*T**4 / (3*eos.kappa(rho,T,Ye)*ycolumn)
+	F = arad*clight*T**4 / (3*eos.kappa(rho,T,Ye,YZ2)*ycolumn)
 	CP = 2.5*kB*Yi/mp
 	dTdt = (eps - F/ycolumn)/CP
 

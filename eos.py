@@ -18,11 +18,12 @@ def find_rho(P,T,Ye,Yi):
 	rho = optimize.brentq(find_rho_eqn,1.0,1e8,xtol=1e-6,args=(P,Ye,Yi,T))
 	return rho
 		
-def kappa(rho,T,Ye):     # Need to add conduction !!
+def kappa(rho,T,Ye,YZ2):     # Need to add conduction !!
 	rho5=rho*1e-5
 	T8=T*1e-8
 	# radiative opacity
-	kff = 0.753*Ye*rho5/T8**3.5    # free-free Gaunt factor set to 1
+	kff = 0.753*Ye*rho5*YZ2/T8**3.5    # free-free Gaunt factor set to 1
 	kes = 0.4*Ye/((1+2.7*rho5/T8**2)*(1.0+(T8/4.5)**0.86))
 	# Thompson scattering with corrections from Paczynski 1983
 	return kes + kff   # note that strictly Rosseland mean opacities don't add (<30% error)
+	
