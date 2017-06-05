@@ -1,3 +1,5 @@
+#cython: profile=False
+
 cimport cython
 
 cdef extern from "math.h":
@@ -73,8 +75,12 @@ def read_rates(species):
 				a0,a1,a2,a3 = [float(line[13*i:13*(i+1)]) for i in range(4)]
 			if count==2:
 				a4,a5,a6 = [float(line[13*i:13*(i+1)]) for i in range(3)]
-				ind = tuple(species.index(spec) for spec in nuclides)
-				rates.append((n_reac_vec[chapter-1],n_prod_vec[chapter-1],ind,a0,a1,a2,a3,a4,a5,a6,Q))
+				ind = [species.index(spec) for spec in nuclides]
+				if len(ind)>4:
+					print("more than 4 reactants and products!!")
+				else:
+					ind = ind + [0]*(4-len(ind))
+				rates.append((n_reac_vec[chapter-1],n_prod_vec[chapter-1],ind[0],ind[1],ind[2],ind[3],a0,a1,a2,a3,a4,a5,a6,Q))
 				include_rate=False
 		count = (count+1) % 3
 	fp.close()
@@ -84,62 +90,72 @@ def read_rates(species):
 @cython.wraparound(False)
 @cython.cdivision(True)
 def calculate_dYdt(double rho,double T,double Ye,double [:] Y,double [:] AA,double [:] ZZ,rates):
-	cdef int n_reac, n_prod, count, i, i0, i1
+	cdef int n_reac, n_prod, count, i, i0, i1, i2, i3
 	cdef double ydot, eps, rateval, Q_val
 	cdef double a0, a1, a2, a3, a4, a5, a6
 	cdef double[:] dYdt=np.zeros(len(Y))
-	cdef tuple ind
+	cdef double T9, T913, T953, T9log, r613
+	cdef tuple rate
 	eps = 0.0
-	for rate in rates:   
-		n_reac, n_prod, ind, a0, a1, a2, a3, a4, a5, a6, Q_val = rate
+	T9 = 1e-9*T
+	T913 = T9**(1.0/3.0)
+	T953 = T9**(5.0/3.0)
+	T9log = log(T9)
+	r613 = (Ye*rho/1e6)**(1.0/3.0)
+	for i in range(len(rates)): 
+		n_reac, n_prod, i0, i1, i2, i3, a0, a1, a2, a3, a4, a5, a6, Q_val = rates[i]
 
-		rateval = calculate_rate(T*1e-9, a0, a1, a2, a3, a4, a5, a6)
+		rateval = calculate_rate(T9,T913,T953,T9log, a0, a1, a2, a3, a4, a5, a6)
 
-		i0 = ind[0]
-		ydot = rateval*Y[i0]
-		if n_reac>1:
-			i1 = ind[1]
-			ydot *= rho*Y[i1]*exp(screening(T, rho, Ye, ZZ[i0], ZZ[i1], AA[i0], AA[i1]))
-						# note: currently no check for identical particles
-			if n_reac>2:
-				#ydot *= rho*Y[ind[2]] / 6.0    # assume this is triple alpha
-				ydot = eps_triple_alpha(rho, T, Ye) * Y[i0]**3 / Q_val
-
-		count = 0
-		for i in ind:
-			dYdt[i] += -ydot if count<n_reac else ydot
-			count+=1
+		if n_reac == 1:
+			ydot = rateval*Y[i0]
+			dYdt[i0] += -ydot
+			dYdt[i1] += ydot
+			if n_prod >= 2: 
+				dYdt[i2] += ydot
+			if n_prod == 3:
+				dYdt[i3] += ydot
+		if n_reac == 2:
+			ydot = rateval*Y[i0]*rho*Y[i1]*exp(screening(T9, r613, Ye, ZZ[i0], ZZ[i1], AA[i0], AA[i1]))
+			dYdt[i0] += -ydot
+			dYdt[i1] += -ydot
+			dYdt[i2] += ydot
+			if n_prod == 2: 
+				dYdt[i3] += ydot
+		if n_reac == 3:
+			ydot = eps_triple_alpha(rho, T, Ye) * Y[i0]**3 / Q_val
+			dYdt[i0] += -ydot
+			dYdt[i1] += -ydot
+			dYdt[i2] += -ydot
+			dYdt[i3] += ydot
 			
 		eps += Q_val*ydot    # rate[4] is the Qvalue in MeV/mu
 	return dYdt, eps
 
 @cython.cdivision(True)
-cdef double calculate_rate(double T9,double a0,double a1,double a2,double a3,double a4,double a5,double a6):
+cdef double calculate_rate(double T9,double T913,double T953,double T9log,double a0,double a1,double a2,double a3,double a4,double a5,double a6):
 	# numerically evaluates the rate
-	cdef double T913, T953, rate
-	T913 = T9**(1.0/3.0)
-	T953 = T9**(5.0/3.0)
+	#cdef double T913, T953, rate
+	#T913 = T9**(1.0/3.0)
+	#T953 = T9**(5.0/3.0)
 	rate = exp(a0 + a1/T9 + a2/T913 + a3*T913 + a4*T9 + a5*T953 + a6*log(T9))
 	return rate
 
 @cython.cdivision(True)
-cdef double screening(double T, double rho, double Ye, double Z1, double Z2, double A1, double A2):
+cdef double screening(double T9, double r613, double Ye, double Z1, double Z2, double A1, double A2):
 	# screening factor from Ogata et al 1993
 	# eqs. (19)--(21)
-	cdef double T8, gam, r6, r613, f, lgam, hf, A, tau, Z13,Z23, QQ, DD,BB
+	cdef double gam, f, lgam, hf, A, tau, Z13,Z23, QQ, DD,BB
 	
 	A = A1*A2/(A1+A2)
-	T8 = 1e-8*T
-	r6 = Ye*rho/1e6
-	r613 = r6**(1.0/3.0)
 	Z13 = Z1**(1.0/3.0)
 	Z23 = Z2**(1.0/3.0)
 	
 	hf = 0.25*(Z13+Z23)**3/(Z1+Z2)
-	gam = 0.23 * r613/T8 * 2.0*Z1*Z2/(Z13+Z23)
+	gam = 0.023 * r613/T9 * 2.0*Z1*Z2/(Z13+Z23)
 	lgam=log(gam)
 	
-	tau = 9.18*(Z1*Z2)**(2.0/3.0)*(A/T8)**(1.0/3.0)
+	tau = 9.18*(Z1*Z2)**(2.0/3.0)*(0.1*A/T9)**(1.0/3.0)
 	f = 3.0*gam/tau
 	
 	QQ = (1.148-0.00944*lgam-0.000168*lgam*lgam)*gam-0.15625*gam*f*f*hf+(-0.18528+0.03863*lgam+0.01095*f)*gam*f*f*f
