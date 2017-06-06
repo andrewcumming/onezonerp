@@ -10,6 +10,5 @@ The code `steady.py` calculates the profile of a steady burning envelope (as in 
 
 Not included:
 
-* neutrino losses
-* screening
+* neutrino losses in energy generation rate
 * density-dependent weak rates
