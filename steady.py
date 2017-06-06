@@ -18,6 +18,7 @@ from scipy.integrate import odeint
 from scipy import optimize
 import itertools
 import eos
+import kappa
 import net
 import time
 
@@ -34,7 +35,7 @@ def derivs(Y,t):
 	dYdt, eps = net.calculate_dYdt(rho,T,Ye,Y[:-2],AA,ZZ,rates)
 
 	# temperature gradient  (eq. 6 of Schatz et al. 1999)
-	dTdt = mdot * 3.0*eos.kappa(rho,T,Ye,YZ2)*F / (4.0*arad*clight*T**3)
+	dTdt = mdot * 3.0*kappa.kappa(rho,T,Y[:-2],AA,ZZ)*F / (4.0*arad*clight*T**3)
 
 	# dF/dt, ignoring compressional heating (eq. 5 of Schatz et al 1999)
 	dFdt = -mdot * eps
@@ -55,6 +56,8 @@ Ftop = 6.5
 print('Accretion rate ',mdot, ' Eddington; flux at the top = ',Ftop, ' MeV/mu')
 mdot = mdot*mdot_Edd
 
+# initialize opacities
+kappa.init()
 
 # ----- set up network -----
 # small network while developing
