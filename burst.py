@@ -24,7 +24,7 @@ def derivs(Y,t):
 	Yi = sum(Y[:-1])
 	P = grav*ycolumn
 	rho = eos.find_rho(P,T,Ye,Yi)
-	#kap = kappa.kappa(rho,T,Y[:-1],AA,ZZ)
+	#kap, _ = kappa.kappa(rho,T,Y[:-1],AA,ZZ)
 	kap = 0.2
 
 	# abundance derivatives
@@ -99,7 +99,7 @@ for i, T in enumerate(result[:,-1]):
 	P = grav*ycolumn
 	Yi = sum(result[i,:-1])
 	rho = eos.find_rho(P,T,Ye,Yi)
-	#kap = kappa.kappa(rho,T,result[i,:-1],AA,ZZ)
+	#kap, _ = kappa.kappa(rho,T,result[i,:-1],AA,ZZ)
 	kap = 0.2
 	flux = arad*clight*T**4/(3*kap*ycolumn)
 	F = np.append(F,flux)

@@ -26,12 +26,13 @@ def derivs(Y,t):
 	Ye = sum(Y[:-2]*ZZ)
 	Yi = sum(Y[:-2])
 	rho = eos.find_rho(P,T,Ye,Yi)
+	kap, _ = kappa.kappa(rho,T,Y[:-2],AA,ZZ)
 
 	# abundance derivatives
 	dYdt, eps = net.calculate_dYdt(rho,T,Ye,Y[:-2],AA,ZZ,rates)
 
 	# temperature gradient  (eq. 6 of Schatz et al. 1999)
-	dTdt = mdot * 3.0*kappa.kappa(rho,T,Y[:-2],AA,ZZ)*F / (4.0*arad*clight*T**3)
+	dTdt = mdot * 3.0*kap*F / (4.0*arad*clight*T**3)
 
 	# dF/dt, ignoring compressional heating (eq. 5 of Schatz et al 1999)
 	dFdt = -mdot * eps
@@ -51,7 +52,7 @@ mdot = 1.0
 Ftop = 6.3
 print('Accretion rate ',mdot, ' Eddington; flux at the top = ',Ftop, ' MeV/mu')
 mdot = mdot*mdot_Edd
-time_to_run = 3e4
+time_to_run = 8e3
 nsteps = 10000
 
 # ----- set up network -----
@@ -96,7 +97,7 @@ for i in range(len(t)):
 	Ye = sum(result[i,:-2]*ZZ)
 	Yi = sum(result[i,:-2])
 	rho = eos.find_rho(grav * mdot * t[i],T,Ye,Yi)
-	kap = kappa.kappa(rho, T, result[i,:-2],AA,ZZ)
+	kap, _ = kappa.kappa(rho, T, result[i,:-2],AA,ZZ)
 	kap_vec = np.append(kap_vec, kap)
 
 #------- plots ----------

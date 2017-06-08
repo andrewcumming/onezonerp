@@ -1,4 +1,4 @@
-#cython: profile=True, boundscheck=False, wraparound=False, cdivision=True
+#cython: profile=False, boundscheck=False, wraparound=False, cdivision=True
 
 cimport cython
 
@@ -29,7 +29,7 @@ def kappa_abs(double T_keV, double rho, double Ye, XA, AA, ZZ, double chi):
 	return kff
 
 # free-free Gaunt factor
-def gff(double T_keV, double rho, double Ye, double Z, double chi):
+cdef double gff(double T_keV, double rho, double Ye, double Z, double chi):
 	cdef double u = 10.0
 	cdef double lchi, PP, gam, f1, f2, f3, rho5, T8
 	
@@ -55,7 +55,7 @@ def init():
 
 # ----------------------- Thermal conductivity ------------------------------------
 
-def K_cond(double T_keV, double rho, double Ye, double Yi, double YZ2, double chi):
+cdef double K_cond(double T_keV, double rho, double Ye, double Yi, double YZ2, double chi):
 
 	cdef double m_star, gamma, lam, x, nu
 
@@ -111,4 +111,4 @@ def kappa(double rho, double T, XA, AA, ZZ):
 	kcond = 4.72854e17 * T_keV**3 / (rho * K_cond(T_keV, rho, Ye, Yi, YZ2, chi))
 	
 	# return the total opacity
-	return 1.0 / (1.0/krad + 1.0/kcond)
+	return 1.0 / (1.0/krad + 1.0/kcond), (krad,kff,kes,kcond)
