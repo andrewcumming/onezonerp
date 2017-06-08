@@ -6,6 +6,7 @@ cdef extern from "math.h":
 	double exp(double m)
 	double log(double m)
 	double sqrt(double m)
+	double MPI "M_PI"
 
 import numpy as np
 from scipy import optimize

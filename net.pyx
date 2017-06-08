@@ -17,6 +17,17 @@ elements = { 'h':1, 'he':2, 'c':6, 'n':7, 'o':8, 'f':9, 'ne':10, 'na':11, 'mg':1
 	'as':33, 'se':34, 'br':35, 'kr':36, 'rb':37, 'sr':38, 'y':39, 'zr':40, 'nb':41, 'mo':42,
 	'tc':43, 'ru':44, 'rh':45, 'pd':46, 'ag':47, 'cd':48, 'in':49, 'sn':50, 'sb':51,}
 
+# some networks
+nucs = {}
+# small network while developing
+nucs['48'] = 'h1 he4 o14-16 c12 n13-15 f17-18 ne18-19 na20-21 mg21-22 al22-25 si23-27 p27-30 s29-31 cl32-34 ar33-35 k36-38 ca37-39 sc40-42 ti41-43 v44-46 cr45-47 mn48'
+# the smaller rp net from MESA  (~140 isotopes)
+nucs['56'] = 'h1 he4 o14-18 c12-13 n13-15 f17-19 ne18-21 na20-23 mg21-25 al22-27 si24-30 p26-31 s27-34 cl30-35 ar31-38 k35-39 ca36-44 sc39-45 ti40-47 v43-49 cr44-52 mn47-53 fe48-56 co51-56 ni52-56'
+# bigger (~200 isotopes)
+nucs['78'] = 'h1 he4 o14-18 c12-13 n13-15 f17-19 ne18-21 na20-23 mg21-25 al22-27 si24-30 p26-31 s27-34 cl30-35 ar31-38 k35-39 ca36-44 sc39-45 ti40-47 v43-49 cr44-52 mn47-53 fe48-56 co51-56 ni52-57 cu54-63 zn55-66 ga59-67 ge60-68 as64-69 se65-72 br68-73 kr69-74 rb73-77 sr74-78'
+# biggest (~300 isotopes)
+nucs['106'] = 'h1 he4 o14-18 c12-13 n13-15 f17-19 ne18-21 na20-23 mg21-25 al22-27 si24-30 p26-31 s27-34 cl30-35 ar31-38 k35-39 ca36-44 sc39-45 ti40-47 v43-49 cr44-52 mn47-53 fe48-56 co51-56 ni52-57 cu54-63 zn55-66 ga59-67 ge60-68 as64-69 se65-72 br68-73 kr69-74 rb73-77 sr74-78 y77-82 zr78-83 nb81-85 mo82-86 tc85-88 ru86-91 rh89-93 pd90-94 ag94-98 cd95-99 in98-104 sn99-105 sb106'
+
 def make_species_list(input_list):
 	output_list = []
 	for spec in input_list.split(' '):

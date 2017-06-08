@@ -6,6 +6,7 @@ cdef extern from "math.h":
 	double exp(double m)
 	double log(double m)
 	double sqrt(double m)
+	double MPI "M_PI"
 	
 import numpy as np
 from scipy import interpolate
@@ -29,7 +30,7 @@ def kappa_abs(double T_keV, double rho, double Ye, XA, AA, ZZ, double chi):
 
 # free-free Gaunt factor
 def gff(double T_keV, double rho, double Ye, double Z, double chi):
-	cdef double MPI = 3.141592654, u = 10.0
+	cdef double u = 10.0
 	cdef double lchi, PP, gam, f1, f2, f3, rho5, T8
 	
 	rho5 = rho*1e-5
@@ -71,8 +72,7 @@ def K_cond(double T_keV, double rho, double Ye, double Yi, double YZ2, double ch
 	nu = 3.47e13 * m_star * (YZ2/Ye) * lam
 	
 	# return the conductivity in cgs
-	return 0.4381 * T_keV * Ye * rho / (m_star * nu)
-	
+	return 2.45e29 * T_keV * Ye * rho / (m_star * nu)
 	
 # ----------------------- Opacity ------------------------------------
 

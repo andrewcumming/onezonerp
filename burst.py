@@ -4,10 +4,7 @@
 # Nuclear rates are from REACLIB (see net.py)
 # Not included:
 # * neutrino losses
-# * screening
 # * density-dependent weak rates
-# * conduction in the opacity
-# * free-free Gaunt factor has been set to 1
 #
 #----------------------------------------------------------------------------
 
@@ -17,22 +14,24 @@ from scipy.integrate import odeint
 from scipy import optimize
 import itertools
 import eos
+import kappa
 import net
 import time
 
 def derivs(Y,t):
 	T = Y[-1]
-	YZ2 = sum(Y[:-1]*ZZ*ZZ)
 	Ye = sum(Y[:-1]*ZZ)
 	Yi = sum(Y[:-1])
 	P = grav*ycolumn
 	rho = eos.find_rho(P,T,Ye,Yi)
+	#kap = kappa.kappa(rho,T,Y[:-1],AA,ZZ)
+	kap = 0.2
 
 	# abundance derivatives
 	dYdt, eps = net.calculate_dYdt(rho,T,Ye,Y[:-1],AA,ZZ,rates)
 
 	# temperature
-	F = arad*clight*T**4 / (3*eos.kappa(rho,T,Ye,YZ2)*ycolumn)
+	F = arad*clight*T**4 / (3*kap*ycolumn)
 	CP = 2.5*kB*Yi/mp
 	dTdt = (eps - F/ycolumn)/CP
 
@@ -40,7 +39,7 @@ def derivs(Y,t):
 	dYdt = np.append(dYdt,dTdt)
 	return dYdt
 
-# parameters
+# ------ parameters ------
 grav = 2.45e14
 mdot_Edd = 8.8e4
 arad = 7.5657e-15
@@ -48,10 +47,17 @@ clight = 3e10
 kB = 1.38e-16
 mp = 1.67e-24
 
-X0 = 0.0
+X0 = 0.7
+T0 = 2.5e8
+ycolumn = 2e8
+time_to_run =  1000.0
+nsteps = 1e5
+
+# ------ initialize opacities ------
+kappa.init()
 
 # ----- set up network -----
-species = net.make_species_list('h1 he4 c12-13 o14-18 n13-15 f17-19 ne18-22 na20-23 mg21-26 al22-27 si24-30 p26-31 s27-34 cl30-35 ar31-38 k35-39 ca36-44 sc39-45 ti40-47 v43-49 cr44-52 mn47-53 fe48-56 co51-56 ni52-57 cu54-63 zn55-66 ga59-67 ge60-68 as64-69 se65-72 br68-73 kr69-74 rb73-77 sr74-78')
+species = net.make_species_list( net.nucs['106'] )
 print("Number of species=",len(species))
 AA, ZZ = net.get_AZ(species)
 rates = net.read_rates(species)
@@ -64,10 +70,6 @@ XX = np.append(np.array([X0,1.0-X0,0.00]),np.zeros(len(species)-3))
 YY = np.array([X/A for X,A in zip(XX,AA)])
 
 # ----- integrate ----- 
-T0 = 2e8
-ycolumn = 3e8
-time_to_run =  1e2
-nsteps = 1e5
 t = np.arange(nsteps+1)*time_to_run/nsteps
 t0 = time.time()
 result = odeint(derivs,np.append(YY,T0),t,mxstep=100000)
@@ -97,7 +99,9 @@ for i, T in enumerate(result[:,-1]):
 	P = grav*ycolumn
 	Yi = sum(result[i,:-1])
 	rho = eos.find_rho(P,T,Ye,Yi)
-	flux = arad*clight*T**4 / (3*eos.kappa(rho,T,Ye)*ycolumn)
+	#kap = kappa.kappa(rho,T,result[i,:-1],AA,ZZ)
+	kap = 0.2
+	flux = arad*clight*T**4/(3*kap*ycolumn)
 	F = np.append(F,flux)
 	Ye_vec = np.append(Ye_vec,Ye)
 	Yi_vec = np.append(Yi_vec,Yi)
