@@ -24,16 +24,15 @@ def derivs(Y,t):
 	Yi = sum(Y[:-1])
 	P = grav*ycolumn
 	rho = eos.find_rho(P,T,Ye,Yi)
-	#kap, _ = kappa.kappa(rho,T,Y[:-1],AA,ZZ)
-	kap = 0.2
+	kap, _ = kappa.kappa(rho,T,Y[:-1],AA,ZZ)
+	#kap = 0.2
 
 	# abundance derivatives
 	dYdt, eps = net.calculate_dYdt(rho,T,Ye,Y[:-1],AA,ZZ,rates)
 
-	# temperature
+	# temperature derivatives
 	F = arad*clight*T**4 / (3*kap*ycolumn)
-	CP = 2.5*kB*Yi/mp
-	dTdt = (eps - F/ycolumn)/CP
+	dTdt = (eps - F/ycolumn)/eos.CP(rho,T,Ye,Yi)
 
 	# return all the derivatives together
 	dYdt = np.append(dYdt,dTdt)
@@ -99,8 +98,8 @@ for i, T in enumerate(result[:,-1]):
 	P = grav*ycolumn
 	Yi = sum(result[i,:-1])
 	rho = eos.find_rho(P,T,Ye,Yi)
-	#kap, _ = kappa.kappa(rho,T,result[i,:-1],AA,ZZ)
-	kap = 0.2
+	kap, _ = kappa.kappa(rho,T,result[i,:-1],AA,ZZ)
+	#kap = 0.2
 	flux = arad*clight*T**4/(3*kap*ycolumn)
 	F = np.append(F,flux)
 	Ye_vec = np.append(Ye_vec,Ye)

@@ -29,6 +29,16 @@ def find_rho(P,T,Ye,Yi):
 	rho = optimize.brentq(find_rho_eqn,1.0,1e8,xtol=1e-6,args=(P,Ye,Yi,T))
 	return rho
 
+# ------------------------------- Heat capacity -------------------------
+def CP(rho,T,Ye,Yi):
+	# ions and electrons (assumes electrons are non-degenerate at the temperatures in the burst)
+	CPi = 2.5*1.38e-16*(Yi+Ye)/1.67e-24
+	# radiation contribution
+	arad = 7.5657e-15
+	Prad = arad*T**4/3.0
+	beta = 1 - Prad/pressure(rho,T,Ye,Yi) 
+	f = (32-24*beta-3*beta*beta) / (5*beta*beta)
+	return CPi * f
 
 # -------------------------- Fermi energy -------------------------------
 
