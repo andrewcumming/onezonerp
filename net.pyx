@@ -113,6 +113,7 @@ def calculate_dYdt(double rho,double T,double Ye,double [:] Y,double [:] AA,doub
 	T953 = T9**(5.0/3.0)
 	T9log = log(T9)
 	r613 = (Ye*rho/1e6)**(1.0/3.0)
+	done_triple_alpha = False
 	for i in range(len(rates)): 
 		n_reac, n_prod, i0, i1, i2, i3, a0, a1, a2, a3, a4, a5, a6, Q_val = rates[i]
 
@@ -134,13 +135,17 @@ def calculate_dYdt(double rho,double T,double Ye,double [:] Y,double [:] AA,doub
 			if n_prod == 2: 
 				dYdt[i3] += ydot
 		if n_reac == 3:
-			ydot = eps_triple_alpha(rho, T, Ye) * Y[i0]**3 / Q_val
-			dYdt[i0] += -ydot
-			dYdt[i1] += -ydot
-			dYdt[i2] += -ydot
-			dYdt[i3] += ydot
+		    # because we are hard coding triple alpha, we need to make sure we only add this once 
+			# (the REACLIB library has >1 entry for triple alpha)
+			if not done_triple_alpha:
+			    ydot = eps_triple_alpha(rho, T, Ye) * Y[i0]**3 / Q_val
+			    dYdt[i0] += -ydot
+			    dYdt[i1] += -ydot
+			    dYdt[i2] += -ydot
+			    dYdt[i3] += ydot
+			    done_triple_alpha = True
 			
-		eps += Q_val*ydot    # rate[4] is the Qvalue in MeV/mu
+		eps += Q_val*ydot
 	return dYdt, eps
 
 @cython.cdivision(True)
